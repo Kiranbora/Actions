@@ -1,0 +1,25 @@
+name: Deploy MSI Package with Chocolatey
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Chocolatey
+      run: |
+        Set-ExecutionPolicy Bypass -Scope Process -Force; `
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+    - name: Create Chocolatey package
+      run: choco pack myapp/myapp.nuspec
+
+    - name: Push package to Chocolatey
+      env:
+        CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+      run: choco push myapp.1.0.0.nupkg --source https://push.chocolatey.org/
