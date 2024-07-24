@@ -1,9 +1,12 @@
-name: Deploy MSI Package with Chocolatey
+name: Deploy Package with Chocolatey from JFrog
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  build:
+  deploy:
     runs-on: windows-latest
 
     steps:
@@ -12,14 +15,13 @@ jobs:
 
     - name: Set up Chocolatey
       run: |
-        Set-ExecutionPolicy Bypass -Scope Process -Force; `
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
         iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-    - name: Create Chocolatey package
-      run: choco pack myapp/myapp.nuspec
+    - name: Configure Chocolatey to use JFrog Artifactory
+      run: |
+        choco source add --name=myjfrog --source=https://<your-jfrog-domain>/artifactory/api/nuget/<your-repo> --user=<your-username> --password=<your-password>
 
-    - name: Push package to Chocolatey
-      env:
-        CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
-      run: choco push myapp.1.0.0.nupkg --source https://push.chocolatey.org/
+    - name: Install Package
+      run: choco install <your-package-id> --version=<your-package-version> --source=myjfrog
